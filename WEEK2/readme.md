@@ -22,7 +22,7 @@ The goal is to group customers based on their purchasing behavior, demographics,
 
 - Conclusion - Final thoughts
 
-#  Customer Personality Analysis (CPA) Dataset (Download from Kaggle)
+#  Customer Personality Analysis (CPA) Dataset
 
 ## Features Included:
 
@@ -62,6 +62,17 @@ Most customers: 40-60 years old
 - Checked purchase channels
 
 ## Further Steps
-Try other clustering methods (Agglomerative Clustering, GAN
+Try other clustering methods (Agglomerative Clustering, DBSCAN, Hierarchical clustering)
 
 Predict groups for new customers
+
+RFM analysis(Recency, Frequency, Monetary)
+
+A/B Test Marketing Strategies (Validate which strategies work best per cluster)
+
+Deploy for Business Use (Email Automation, CRM Integration, Dashboards)
+
+Advanced: Deep Learning (Handle complex patterns (e.g., text from reviews)
+
+## Author
+### Desmyk
