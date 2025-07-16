@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mental Health AI Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        
+        .section h3 {
+            color: #444;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .emoji {
+            margin-right: 10px;
+            font-size: 20px;
+        }
+        
+        input, textarea, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #5a6fd8;
+        }
+        
+        .response {
+            background: #e8f4fd;
+            border: 1px solid #bee5eb;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .status {
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧠 Mental Health AI Assistant</h1>
+            <p>Test the API endpoints and interact with your AI assistant</p>
+        </div>
+        
+        <!-- Server Status -->
+        <div class="section">
+            <h3><span class="emoji">🔌</span>Server Status</h3>
+            <button onclick="checkHealth()">Check API Health</button>
+            <div id="health-status" class="response"></div>
+        </div>
+        
+        <!-- User Registration -->
+        <div class="section">
+            <h3><span class="emoji">👤</span>User Registration</h3>
+            <input type="text" id="reg-username" placeholder="Username">
+            <input type="email" id="reg-email" placeholder="Email">
+            <input type="password" id="reg-password" placeholder="Password">
+            <input type="text" id="reg-firstname" placeholder="First Name">
+            <input type="text" id="reg-lastname" placeholder="Last Name">
+            <button onclick="registerUser()">Register</button>
+            <div id="register-response" class="response"></div>
+        </div>
+        
+        <!-- User Login -->
+        <div class="section">
+            <h3><span class="emoji">🔑</span>User Login</h3>
+            <input type="text" id="login-username" placeholder="Username">
+            <input type="password" id="login-password" placeholder="Password">
+            <button onclick="loginUser()">Login</button>
+            <div id="login-response" class="response"></div>
+        </div>
+        
+        <!-- Chat with AI -->
+        <div class="section">
+            <h3><span class="emoji">💬</span>Chat with AI</h3>
+            <textarea id="chat-message" placeholder="Type your message here..." rows="3"></textarea>
+            <button onclick="sendMessage()">Send Message</button>
+            <div id="chat-response" class="response"></div>
+        </div>
+        
+        <!-- Mood Logging -->
+        <div class="section">
+            <h3><span class="emoji">😊</span>Mood Tracking</h3>
+            <input type="range" id="mood-score" min="1" max="5" value="3">
+            <label>Mood Score: <span id="mood-value">3</span>/5</label>
+            <textarea id="mood-notes" placeholder="How are you feeling? (optional)" rows="2"></textarea>
+            <button onclick="logMood()">Log Mood</button>
+            <div id="mood-response" class="response"></div>
+        </div>
+        
+        <!-- Resources -->
+        <div class="section">
+            <h3><span class="emoji">📚</span>Mental Health Resources</h3>
+            <button onclick="getResources()">Get Resources</button>
+            <div id="resources-response" class="response"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let authToken = '';
+        
+        // Update mood value display
+        document.getElementById('mood-score').addEventListener('input', function() {
+            document.getElementById('mood-value').textContent = this.value;
+        });
+        
+        function showStatus(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${isError ? 'error' : 'success'}`;
+        }
+        
+        async function apiCall(endpoint, method = 'GET', data = null, useAuth = false) {
+            const options = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            };
+            
+            if (useAuth && authToken) {
+                options.headers['Authorization'] = `Bearer ${authToken}`;
+            }
+            
+            if (data) {
+                options.body = JSON.stringify(data);
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, options);
+                const result = await response.json();
+                return { status: response.status, data: result };
+            } catch (error) {
+                return { status: 0, data: { error: error.message } };
+            }
+        }
+        
+        async function checkHealth() {
+            const result = await apiCall('/health');
+            document.getElementById('health-status').textContent = JSON.stringify(result, null, 2);
+        }
+        
+        async function registerUser() {
+            const data = {
+                username: document.getElementById('reg-username').value,
+                email: document.getElementById('reg-email').value,
+                password: document.getElementById('reg-password').value,
+                first_name: document.getElementById('reg-firstname').value,
+                last_name: document.getElementById('reg-lastname').value,
+            };
+            
+            const result = await apiCall('/auth/register', 'POST', data);
+            document.getElementById('register-response').textContent = JSON.stringify(result, null, 2);
+        }
+        
+        async function loginUser() {
+            const data = {
+                username: document.getElementById('login-username').value,
+                password: document.getElementById('login-password').value,
+            };
+            
+            const result = await apiCall('/auth/login', 'POST', data);
+            if (result.status === 200 && result.data.access_token) {
+                authToken = result.data.access_token;
+                showStatus('login-response', 'Login successful! Token saved for API calls.');
+            } else {
+                document.getElementById('login-response').textContent = JSON.stringify(result, null, 2);
+            }
+        }
+        
+        async function sendMessage() {
+            const message = document.getElementById('chat-message').value;
+            if (!message.trim()) return;
+            
+            const data = { message };
+            const result = await apiCall('/chat/send', 'POST', data, true);
+            document.getElementById('chat-response').textContent = JSON.stringify(result, null, 2);
+        }
+        
+        async function logMood() {
+            const data = {
+                score: parseInt(document.getElementById('mood-score').value),
+                notes: document.getElementById('mood-notes').value,
+            };
+            
+            const result = await apiCall('/mood/log', 'POST', data, true);
+            document.getElementById('mood-response').textContent = JSON.stringify(result, null, 2);
+        }
+        
+        async function getResources() {
+            const result = await apiCall('/resources/');
+            document.getElementById('resources-response').textContent = JSON.stringify(result, null, 2);
+        }
+        
+        // Check server health on page load
+        window.onload = function() {
+            checkHealth();
+        };
+    </script>
+</body>
+</html>
